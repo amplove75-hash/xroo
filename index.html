@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>실감미디어 진로 선택 대시보드</title>
+<meta name="description" content="적성 체크, 직업, 전공, 대학, 진로검사로 보는 실감미디어(VR·AR·XR·메타버스) 진로 선택 대시보드">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root {
+    --bg: #f7f6f2; --panel: #ffffff; --fg: #1f1e1c; --muted: #6b6862; --line: #e4e1da; --grid: #ece9e2;
+    --c0: #d0643b; --c1: #2f6fdb; --c2: #2e9a6b; --c3: #8a5cd1; --c4: #c9a227;
+    --radius: 10px; --shadow: 0 6px 20px rgba(0,0,0,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #171614; --panel: #211f1d; --fg: #eeece7; --muted: #a29e96; --line: #36332f; --grid: #2d2a27;
+      --c0: #e8825c; --c1: #6b9cf0; --c2: #4fc08d; --c3: #a985e6; --c4: #e0bd4a; --shadow: 0 6px 20px rgba(0,0,0,.4); }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; line-height: 1.55; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 56px; display: grid; gap: 22px; }
+  h1 { font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 700; margin: 0; letter-spacing: -.02em; }
+  .lead { margin: 6px 0 0; color: var(--muted); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+  .kpi, .card, .job { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+  .kpi { padding: 14px 18px; }
+  .kpi .lbl, .kpi .note { font-size: .8rem; color: var(--muted); }
+  .kpi .val { font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .kpi .unit { font-size: .95rem; font-weight: 500; color: var(--muted); margin-left: 3px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+  .tab { font: inherit; background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; color: var(--muted); cursor: pointer; }
+  .tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--fg); font-weight: 600; }
+  section { display: grid; gap: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 14px; }
+  .card { padding: 20px; min-width: 0; }
+  h2 { font-size: 1.08rem; font-weight: 600; margin: 0; }
+  .sub { margin: 4px 0 14px; color: var(--muted); font-size: .82rem; }
+  .group h3 { font-size: .95rem; margin: 0 0 4px; }
+  .checks { display: grid; gap: 14px; }
+  .check { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; cursor: pointer; }
+  .check input { margin-top: 5px; accent-color: var(--fg); width: 16px; height: 16px; }
+  .score { display: grid; gap: 10px; }
+  .srow { display: grid; grid-template-columns: 6.5rem 1fr 3rem; gap: 10px; align-items: center; font-size: .85rem; }
+  .sbar { height: 10px; background: var(--grid); border-radius: 6px; overflow: hidden; }
+  .sbar i { display: block; height: 100%; border-radius: 6px; transition: width .4s ease-out; }
+  .srow .n { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rec { margin: 16px 0 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .btn { font: inherit; font-size: .85rem; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .hint { font-size: .8rem; color: var(--muted); }
+  .jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 12px; }
+  .job { padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
+  .job h4 { margin: 0; font-size: 1rem; }
+  .badge { justify-self: start; font-size: .75rem; padding: 1px 10px; border-radius: 999px; border: 1px solid currentColor; }
+  .job p { margin: 0; font-size: .85rem; }
+  .job dl { margin: 4px 0 0; display: grid; grid-template-columns: 4.6rem 1fr; gap: 3px 8px; font-size: .8rem; }
+  .job dt { color: var(--muted); } .job dd { margin: 0; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { font-family: inherit; font-size: 12px; fill: var(--fg); }
+  .chart .muted { fill: var(--muted); }
+  .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px 10px; font-size: .78rem; white-space: nowrap; z-index: 2; }
+  .tip .t { color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; background: var(--sw); }
+  .tablewrap { overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+  th { text-align: left; font-weight: 600; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  td a { color: inherit; }
+  details { font-size: .82rem; color: var(--muted); }
+  summary { cursor: pointer; }
+  details li { margin: 3px 0; }
+  details a { color: inherit; }
+  footer { font-size: .78rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>실감미디어 진로 선택 대시보드</h1>
+    <p class="lead">적성 체크로 나에게 맞는 트랙(기획·디자인 / 개발·공학)을 찾고, 직업 → 전공 → 대학·검사 순서로 진로를 좁혀 보세요.</p>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">살펴볼 직업</div><div class="val"><span id="k-jobs">—</span><span class="unit">개</span></div><div class="note">기획·디자인 / 개발·공학 / 융합</div></div>
+    <div class="kpi"><div class="lbl">관련 전공</div><div class="val"><span id="k-majors">—</span><span class="unit">개</span></div><div class="note">공학·예체능·인문사회·융합전공</div></div>
+    <div class="kpi"><div class="lbl">실감미디어 혁신융합대학</div><div class="val"><span id="k-univs">—</span><span class="unit">개 대학</span></div><div class="note">건국대 주관 컨소시엄</div></div>
+    <div class="kpi"><div class="lbl">가상현실전문가 중위 임금</div><div class="val"><span id="k-vr">—</span><span class="unit">만원</span></div><div class="note">연간, 2025년 조사</div></div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="대시보드 탭">
+    <button class="tab" role="tab" data-tab="aptitude" aria-selected="true">① 적성 진단</button>
+    <button class="tab" role="tab" data-tab="jobs" aria-selected="false">② 직업 탐색</button>
+    <button class="tab" role="tab" data-tab="majors" aria-selected="false">③ 전공·대학</button>
+    <button class="tab" role="tab" data-tab="path" aria-selected="false">④ 검사·로드맵</button>
+  </nav>
+
+  <section id="aptitude" data-panel="aptitude">
+    <div class="grid">
+      <div class="card">
+        <h2>실감미디어 진로적성 자가 진단</h2>
+        <p class="sub">해당하는 항목에 모두 체크하세요. 정답은 없어요.</p>
+        <div class="checks" id="checklist"></div>
+      </div>
+      <div class="card">
+        <h2>나의 트랙 적합도</h2>
+        <p class="sub">트랙별 체크한 항목 수 / 전체 항목 수</p>
+        <div class="score" id="score"></div>
+        <p class="rec" id="rec-empty">항목을 체크하면 어울리는 트랙을 알려 드려요.</p>
+        <p class="rec" id="rec-result" hidden>지금 결과로는 <b id="rec">—</b> 쪽이 가장 잘 맞아요. 공통 역량(공간지각·예술감각·UX 관심)은 어느 트랙에서나 기본기가 됩니다.</p>
+        <div class="row">
+          <button class="btn" id="go" disabled>추천 트랙 직업 보기 →</button>
+          <button class="btn" id="clear">체크 초기화</button>
+        </div>
+        <p class="hint">자가 진단은 방향을 잡는 참고용이에요. 정확한 진단은 ④ 탭의 공식 검사를 함께 받아 보세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="jobs" data-panel="jobs" hidden>
+    <div class="row filters" role="group" aria-label="트랙 필터"></div>
+    <div class="jobs" id="job-cards"></div>
+    <h2>임금과 학력으로 본 실감미디어 직업</h2>
+    <div class="grid">
+      <div class="card">
+        <h2>연간 임금 범위</h2>
+        <p class="sub">막대: 하위 25%~상위 25%, 점: 중위값(만원) · 2025년 조사, 직업 간 비교용 참고 자료</p>
+        <div class="chart" id="wage"></div>
+      </div>
+      <div class="card">
+        <h2>재직자 학력 분포</h2>
+        <p class="sub">현재 일하는 사람들의 최종 학력 비율(%)</p>
+        <div class="legend" id="edu-legend"></div>
+        <div class="chart" id="edu"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="majors" data-panel="majors" hidden>
+    <div class="row filters" role="group" aria-label="트랙 필터"></div>
+    <div class="card">
+      <h2>관련 전공 지도</h2>
+      <p class="sub">어떤 학과에서 무엇을 배우고, 어떤 직업으로 이어지는지</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>학과</th><th>계열</th><th>트랙</th><th>주로 배우는 것</th><th>이어지는 직업</th></tr></thead>
+        <tbody id="t-majors"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>첨단분야 혁신융합대학(실감미디어) 7개 대학</h2>
+      <p class="sub">참여 대학 학생은 전공과 상관없이 마이크로디그리·연계·융합전공 등으로 실감미디어 과정을 이수할 수 있어요. 사업 기간이 2026년까지로 안내돼 왔으니, 이후 운영 여부는 각 대학 사업단에 확인하세요.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>대학</th><th>지역</th><th>맡은 역할</th><th>특화 공간</th></tr></thead>
+        <tbody id="t-consortium"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section id="path" data-panel="path" hidden>
+    <div class="card">
+      <h2>추천 공식 진로검사</h2>
+      <p class="sub">국가 기관의 무료 검사로 공간지각력·창의력·예술시각능력과 흥미 유형을 확인하세요.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>검사</th><th>기관</th><th>대상</th><th>측정 내용</th><th>실감미디어 해석 팁</th><th>바로가기</th></tr></thead>
+        <tbody id="t-tests"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>단계별 진로 로드맵</h2>
+      <p class="sub">트랙별로 시기마다 해 두면 좋은 준비</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>단계</th><th>시기</th><th>기획·디자인형</th><th>개발·공학형</th></tr></thead>
+        <tbody id="t-roadmap"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <details>
+    <summary>자료 출처와 참고 사항</summary>
+    <ul>
+      <li>임금·만족도·학력 분포: 고용24(워크넷) 직업정보 2025년 조사 값 (<a href="https://invione.com/jobs/info/K000007452" target="_blank" rel="noopener">가상현실전문가</a>, <a href="https://invione.com/jobs/info/K000007580" target="_blank" rel="noopener">게임프로그래머</a>). 공식 수치가 확인된 두 직업만 표시했어요.</li>
+      <li>혁신융합대학 참여 대학과 역할: <a href="https://dhnews.co.kr/news/view/179524095802460" target="_blank" rel="noopener">대학저널 보도</a>(2021년 협약식 기준).</li>
+      <li>직업 카드, 전공 지도, 로드맵, 검사 해석 팁: 공개 직업 설명을 바탕으로 정리한 안내용 예시예요. 학교·회사마다 실제 요구 역량은 다를 수 있어요.</li>
+      <li>적성 체크 결과는 이 화면에서만 계산되고 어디에도 저장되지 않아요.</li>
+    </ul>
+  </details>
+  <footer>자료 기준일: 2026년 11월</footer>
+</main>
+
+<script>
+const DATA = {"checklist": [{"id": "c1", "track": "공통", "item": "공간지각력이 좋은 편이다 (입체·방향 감각)"}, {"id": "c2", "track": "공통", "item": "시각적 예술 감각이 있다"}, {"id": "c3", "track": "공통", "item": "사용자가 가상 세계에서 느낄 경험(UX)에 관심이 많다"}, {"id": "d1", "track": "기획·디자인", "item": "이야기를 만들고 전달하는 스토리텔링을 좋아한다"}, {"id": "d2", "track": "기획·디자인", "item": "3D 그래픽(Blender, 3ds Max 등)에 흥미가 있다"}, {"id": "d3", "track": "기획·디자인", "item": "디지털 드로잉을 즐긴다"}, {"id": "d4", "track": "기획·디자인", "item": "메타버스 공간을 꾸미고 연출하는 데 관심이 있다"}, {"id": "e1", "track": "개발·공학", "item": "프로그래밍(C#, C++ 등)이 재미있다"}, {"id": "e2", "track": "개발·공학", "item": "게임 엔진(Unity, Unreal Engine)을 써 보고 싶다"}, {"id": "e3", "track": "개발·공학", "item": "수학적·논리적으로 생각하는 것이 편하다"}, {"id": "e4", "track": "개발·공학", "item": "새로운 IT 기기(VR 헤드셋 등)를 다뤄 보는 걸 좋아한다"}], "jobs": [{"job": "XR 콘텐츠 기획자·디렉터", "track": "기획·디자인", "role": "가상 공간의 시나리오와 사용자 경험(UX) 흐름을 설계하고 제작을 이끈다", "skills": "스토리텔링, UX 설계, 협업·소통", "tools": "Figma, Miro, Unity(프로토타입)", "majors": "문화·디지털콘텐츠학, 미디어커뮤니케이션", "holland": "예술형(A)·진취형(E)"}, {"job": "메타버스 공간 디자이너", "track": "기획·디자인", "role": "가상 월드의 공간 구성·동선·조명을 디자인하고 연출한다", "skills": "공간지각력, 조형 감각", "tools": "Unreal Engine, Blender, ZEPETO Studio", "majors": "공간·실내디자인, 건축, 시각디자인", "holland": "예술형(A)·현실형(R)"}, {"job": "3D 그래픽 아티스트", "track": "기획·디자인", "role": "아바타·캐릭터·배경을 3D로 모델링하고 질감과 애니메이션을 입힌다", "skills": "3D 조형, 드로잉, 색채", "tools": "Blender, Maya, 3ds Max, ZBrush, Substance", "majors": "애니메이션, 게임그래픽디자인, 영상디자인", "holland": "예술형(A)·현실형(R)"}, {"job": "XR UX·UI 디자이너", "track": "기획·디자인", "role": "손동작·시선으로 조작하는 공간형 인터페이스와 상호작용을 설계한다", "skills": "UX 리서치, 인터랙션 디자인", "tools": "Figma, ShapesXR, Unity", "majors": "시각디자인, 산업디자인, HCI", "holland": "예술형(A)·탐구형(I)"}, {"job": "실감 사운드 디자이너", "track": "기획·디자인", "role": "방향과 거리가 느껴지는 공간 음향(3D 오디오)을 만든다", "skills": "음향 감각, 사운드 편집", "tools": "Wwise, FMOD, Reaper", "majors": "음향공학, 실용음악", "holland": "예술형(A)·현실형(R)"}, {"job": "가상현실(VR) 전문가", "track": "개발·공학", "role": "3D 모델링 등의 기술로 실제와 비슷한 3차원 가상현실 시스템을 개발·테스트한다", "skills": "프로그래밍, 3D 그래픽 제어, 공간지각력", "tools": "C++, C#, Unity, Unreal Engine", "majors": "컴퓨터공학, 응용소프트웨어공학, 정보·통신공학", "holland": "탐구형(I)·현실형(R)"}, {"job": "증강현실(AR) 전문가", "track": "개발·공학", "role": "화면 속 현실 세계에 정보·가상 객체를 합성하는 시스템과 알고리즘을 개발한다", "skills": "영상처리, 알고리즘", "tools": "ARKit, ARCore, Unity AR Foundation, OpenCV", "majors": "컴퓨터공학, 전자공학", "holland": "탐구형(I)·현실형(R)"}, {"job": "XR 인터랙션·게임 프로그래머", "track": "개발·공학", "role": "게임 엔진으로 모션 인식과 실시간 상호작용 기능을 구현한다", "skills": "C#·C++, 벡터·행렬 수학, 물리", "tools": "Unity, Unreal Engine, OpenXR", "majors": "게임공학, 컴퓨터공학, 응용소프트웨어공학", "holland": "탐구형(I)·현실형(R)"}, {"job": "그래픽스·엔진 엔지니어", "track": "개발·공학", "role": "렌더링·셰이더·성능 최적화로 화면이 빠르고 사실적으로 그려지게 만든다", "skills": "선형대수, GPU 구조", "tools": "C++, HLSL, Vulkan", "majors": "컴퓨터공학, 수학", "holland": "탐구형(I)"}, {"job": "디지털 트윈 개발자", "track": "개발·공학", "role": "공장·도시를 가상 공간에 복제해 모니터링과 시뮬레이션을 한다", "skills": "3D, 데이터 분석, IoT", "tools": "Unity, NVIDIA Omniverse, Python", "majors": "산업공학, 컴퓨터공학, 건축공학", "holland": "탐구형(I)·관습형(C)"}, {"job": "실감영상 제작자(버추얼 프로덕션)", "track": "융합", "role": "360° 영상, LED 월 버추얼 스튜디오 촬영과 실시간 합성을 한다", "skills": "촬영·편집, 실시간 엔진", "tools": "Unreal Engine, Premiere Pro, Nuke", "majors": "영상영화학, 사진·영상예술", "holland": "예술형(A)·현실형(R)"}, {"job": "실감미디어 서비스 기획자·PM", "track": "융합", "role": "XR 서비스의 사업 모델을 짜고 개발·디자인 팀의 일정을 관리한다", "skills": "비즈니스 이해, 소통, 일정 관리", "tools": "Notion, Jira, Figma", "majors": "경영학, 미디어학, 산업공학", "holland": "진취형(E)·관습형(C)"}], "job_stats": [{"job": "가상현실전문가", "p25": 4150, "median": 5100, "p75": 6850, "satisfaction": 70.0, "outlook": "증가"}, {"job": "게임프로그래머", "p25": 3925, "median": 6480, "p75": 8500, "satisfaction": 70.3, "outlook": "증가"}], "edu_dist": [{"job": "가상현실전문가", "level": "전문대졸", "share": 3}, {"job": "가상현실전문가", "level": "대졸", "share": 97}, {"job": "게임프로그래머", "level": "고졸", "share": 3}, {"job": "게임프로그래머", "level": "전문대졸", "share": 10}, {"job": "게임프로그래머", "level": "대졸", "share": 64}, {"job": "게임프로그래머", "level": "대학원졸", "share": 20}, {"job": "게임프로그래머", "level": "박사졸", "share": 3}], "majors": [{"major": "컴퓨터공학과", "field": "공학", "track": "개발·공학", "learn": "자료구조·알고리즘, 컴퓨터그래픽스", "jobs": "VR 전문가, 그래픽스·엔진 엔지니어"}, {"major": "(응용)소프트웨어공학과", "field": "공학", "track": "개발·공학", "learn": "소프트웨어 설계·구현·테스트", "jobs": "VR 전문가, XR 프로그래머"}, {"major": "게임공학과", "field": "공학", "track": "개발·공학", "learn": "게임 엔진, 게임 수학, 게임 프로그래밍", "jobs": "XR 인터랙션·게임 프로그래머"}, {"major": "정보·통신·전자공학과", "field": "공학", "track": "개발·공학", "learn": "센서, 영상처리, 네트워크", "jobs": "AR 전문가"}, {"major": "산업공학·스마트ICT융합공학", "field": "공학", "track": "융합", "learn": "시스템 분석, IoT, 데이터", "jobs": "디지털 트윈 개발자, 서비스 PM"}, {"major": "문화·디지털콘텐츠학과", "field": "인문·사회", "track": "기획·디자인", "learn": "스토리텔링, 콘텐츠 기획", "jobs": "XR 콘텐츠 기획자"}, {"major": "시각·영상디자인과", "field": "예체능", "track": "기획·디자인", "learn": "UX·UI, 모션 그래픽", "jobs": "XR UX·UI 디자이너"}, {"major": "애니메이션·게임그래픽과", "field": "예체능", "track": "기획·디자인", "learn": "3D 모델링·애니메이션", "jobs": "3D 그래픽 아티스트"}, {"major": "공간·실내디자인, 건축", "field": "예체능·공학", "track": "기획·디자인", "learn": "공간 구성, 조명, 동선", "jobs": "메타버스 공간 디자이너"}, {"major": "영상영화학과", "field": "예체능", "track": "융합", "learn": "촬영, 편집, VFX", "jobs": "실감영상 제작자"}, {"major": "음향공학·실용음악", "field": "공학·예체능", "track": "기획·디자인", "learn": "사운드 디자인, 음향 기술", "jobs": "실감 사운드 디자이너"}, {"major": "실감미디어 융합전공(마이크로디그리)", "field": "전공 무관", "track": "융합", "learn": "실감미디어 기획·기술·디자인·비즈니스 모듈", "jobs": "모든 실감미디어 직무"}], "consortium": [{"univ": "건국대", "region": "서울", "role": "주관대학 · 기술융합 교육, 공유대학 포털 운영·총괄", "space": "X-Space(실감형 메이커스 스페이스)"}, {"univ": "경희대", "region": "서울·경기", "role": "XR 핵심기술 교육", "space": "기술 테스트베드"}, {"univ": "중앙대", "region": "서울", "role": "창업·비즈니스 교육", "space": "창업지원센터"}, {"univ": "계원예술대", "region": "경기", "role": "디자인·실무 교육 (메타버스 콘텐츠 디자인)", "space": "메타버스 스튜디오"}, {"univ": "배재대", "region": "대전", "role": "문화예술·실감미디어 교육", "space": "지역 연계"}, {"univ": "전주대", "region": "전북", "role": "콘텐츠 디자인 교육", "space": "지역 연계 사회문제 해결"}, {"univ": "계명대", "region": "대구", "role": "국제 교류", "space": "퍼블릭 테스트베드"}], "tests": [{"test": "커리어넷 직업적성검사", "org": "한국직업능력연구원", "target": "중·고등학생", "measure": "공간지각력, 창의력, 예술시각능력 등 여러 적성 영역", "tip": "공간지각·예술시각·창의력이 높으면 실감미디어 전반, 수리·논리력이 함께 높으면 개발·공학형", "url": "https://www.career.go.kr"}, {"test": "커리어넷 직업흥미검사", "org": "한국직업능력연구원", "target": "중·고등학생", "measure": "홀랜드 흥미 유형(R·I·A·S·E·C)", "tip": "예술형(A)은 기획·디자인, 탐구형(I)·현실형(R)은 개발·공학 쪽과 잘 맞음", "url": "https://www.career.go.kr"}, {"test": "고용24 직업선호도검사", "org": "한국고용정보원", "target": "대학생·성인", "measure": "흥미, 성격, 생활사", "tip": "예술형(A)·탐구형(I) 점수가 높을 때 실감미디어 직무와 잘 맞음", "url": "https://www.work24.go.kr"}], "roadmap": [{"step": 1, "stage": "탐색", "when": "중학교", "design": "적성·흥미검사, VR 체험, 디지털 드로잉 시작", "dev": "적성·흥미검사, 블록 코딩에서 파이썬으로"}, {"step": 2, "stage": "준비", "when": "고등학교", "design": "Blender 3D 기초, 스토리·그림 포트폴리오", "dev": "수학(벡터·행렬)·물리, C#과 Unity 입문"}, {"step": 3, "stage": "전공", "when": "대학 1~2학년", "design": "디자인·콘텐츠 전공 + 실감미디어 마이크로디그리", "dev": "컴퓨터·게임공학 전공 + 실감미디어 마이크로디그리"}, {"step": 4, "stage": "실전", "when": "대학 3~4학년", "design": "산학 캡스톤, 공모전, 작품 포트폴리오", "dev": "팀 프로젝트, 해커톤, GitHub 포트폴리오"}, {"step": 5, "stage": "진출", "when": "졸업 후", "design": "XR 스튜디오, 게임사, 광고·방송사", "dev": "XR 개발사, 게임사, 제조·건설 디지털 트윈"}]};
+
+const TRACKS = ['공통', '기획·디자인', '개발·공학'];
+const FILTERS = ['전체', '기획·디자인', '개발·공학', '융합'];
+const LEVELS = ['고졸', '전문대졸', '대졸', '대학원졸', '박사졸'];
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const COLORS = () => ['--c0', '--c1', '--c2', '--c3', '--c4'].map(css);
+const trackColor = (t) => { const c = COLORS(); return ({ '공통': c[2], '기획·디자인': c[0], '개발·공학': c[1], '융합': c[3] })[t] || c[4]; };
+const fmt = (n) => Number(n).toLocaleString('ko-KR');
+const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); Object.assign(e, props); e.append(...kids); return e; };
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs = {}, text) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text != null) e.textContent = text; return e; };
+
+const state = { checked: new Set(), track: '전체', rec: null };
+
+/* KPIs */
+document.getElementById('k-jobs').textContent = DATA.jobs.length;
+document.getElementById('k-majors').textContent = DATA.majors.length;
+document.getElementById('k-univs').textContent = DATA.consortium.length;
+document.getElementById('k-vr').textContent = fmt(DATA.job_stats.find((r) => r.job === '가상현실전문가').median);
+
+/* Tabs */
+const showTab = (name) => {
+  document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== name; });
+  history.replaceState(null, '', '#' + name);
+  if (name === 'jobs') drawCharts();
+};
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+/* Track filter */
+document.querySelectorAll('.filters').forEach((box) => {
+  for (const f of FILTERS) {
+    const b = el('button', { className: 'btn', textContent: f });
+    b.dataset.track = f;
+    b.addEventListener('click', () => setTrack(f));
+    box.append(b);
+  }
+});
+const setTrack = (t) => {
+  state.track = t;
+  document.querySelectorAll('.filters .btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.track === t)));
+  drawJobs(); drawMajors();
+};
+
+/* Checklist */
+const scores = () => Object.fromEntries(TRACKS.map((t) => {
+  const items = DATA.checklist.filter((r) => r.track === t);
+  return [t, { total: items.length, n: items.filter((r) => state.checked.has(r.id)).length }];
+}));
+const pickRec = (s) => {
+  if (!state.checked.size) return null;
+  const d = s['기획·디자인'].n / s['기획·디자인'].total, e = s['개발·공학'].n / s['개발·공학'].total;
+  if (Math.abs(d - e) < 1e-9) return '융합';
+  return d > e ? '기획·디자인' : '개발·공학';
+};
+function drawChecklist() {
+  const box = document.getElementById('checklist');
+  box.replaceChildren();
+  for (const t of TRACKS) {
+    const h = el('h3', { textContent: t === '공통' ? '공통 적성' : t + '형 적성' });
+    h.style.color = trackColor(t);
+    const g = el('div', { className: 'group' }, h);
+    for (const r of DATA.checklist.filter((x) => x.track === t)) {
+      const cb = el('input', { type: 'checkbox', value: r.id, checked: state.checked.has(r.id) });
+      g.append(el('label', { className: 'check' }, cb, el('span', { textContent: r.item })));
+    }
+    box.append(g);
+  }
+}
+document.getElementById('checklist').addEventListener('change', (ev) => {
+  const cb = ev.target;
+  if (!cb.matches('input[type=checkbox]')) return;
+  cb.checked ? state.checked.add(cb.value) : state.checked.delete(cb.value);
+  drawScore();
+});
+function drawScore() {
+  const s = scores(), box = document.getElementById('score');
+  box.replaceChildren();
+  for (const t of TRACKS) {
+    const fill = el('i'); fill.style.width = (s[t].n / s[t].total * 100) + '%'; fill.style.background = trackColor(t);
+    box.append(el('div', { className: 'srow' }, el('span', { textContent: t }), el('div', { className: 'sbar' }, fill), el('span', { className: 'n', textContent: s[t].n + ' / ' + s[t].total })));
+  }
+  state.rec = pickRec(s);
+  const any = state.checked.size > 0;
+  document.getElementById('rec-empty').hidden = any;
+  document.getElementById('rec-result').hidden = !any;
+  const rec = document.getElementById('rec');
+  rec.textContent = state.rec ? ({ '기획·디자인': '기획·디자인형', '개발·공학': '개발·공학형', '융합': '융합형(기획+개발)' })[state.rec] : '—';
+  rec.style.color = state.rec ? trackColor(state.rec) : '';
+  document.getElementById('go').disabled = !state.rec;
+}
+document.getElementById('go').addEventListener('click', () => { if (state.rec) { setTrack(state.rec); showTab('jobs'); } });
+document.getElementById('clear').addEventListener('click', () => { state.checked.clear(); drawChecklist(); drawScore(); });
+
+/* Jobs */
+function drawJobs() {
+  const box = document.getElementById('job-cards');
+  box.replaceChildren();
+  const rows = state.track === '전체' ? DATA.jobs : DATA.jobs.filter((r) => r.track === state.track);
+  for (const r of rows) {
+    const b = el('span', { className: 'badge', textContent: r.track }); b.style.color = trackColor(r.track);
+    const dl = el('dl');
+    for (const [k, f] of [['핵심 역량', 'skills'], ['주요 도구', 'tools'], ['관련 전공', 'majors'], ['흥미 유형', 'holland']]) dl.append(el('dt', { textContent: k }), el('dd', { textContent: r[f] }));
+    box.append(el('article', { className: 'job' }, b, el('h4', { textContent: r.job }), el('p', { textContent: r.role }), dl));
+  }
+}
+
+/* Tooltip */
+function tipFor(box) {
+  let t = box.querySelector('.tip');
+  if (!t) { t = el('div', { className: 'tip', hidden: true }); box.append(t); }
+  return {
+    show(ev, title, lines) {
+      t.replaceChildren(el('div', { className: 't', textContent: title }), ...lines.map((l) => el('div', { textContent: l })));
+      t.hidden = false;
+      const r = box.getBoundingClientRect();
+      let x = ev.clientX - r.left + 12;
+      x = Math.max(4, Math.min(x, r.width - t.offsetWidth - 4));
+      t.style.left = x + 'px'; t.style.top = (ev.clientY - r.top + 12) + 'px';
+    },
+    hide() { t.hidden = true; },
+  };
+}
+function measure(svg, texts) {
+  const p = svgEl('text'); svg.append(p);
+  let w = 0; for (const s of texts) { p.textContent = s; w = Math.max(w, p.getComputedTextLength()); }
+  p.remove(); return w;
+}
+const niceTicks = (lo, hi, n) => {
+  const raw = (hi - lo) / Math.max(1, n), mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v); return out;
+};
+
+/* Wage chart */
+function drawWage() {
+  const box = document.getElementById('wage');
+  if (!box.clientWidth) return;
+  box.querySelector('svg')?.remove();
+  const rows = DATA.job_stats, W = Math.max(280, box.clientWidth), rowH = 56, top = 10, bottom = 26, H = top + rows.length * rowH + bottom;
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '직업별 연간 임금 범위' });
+  box.prepend(svg);
+  const left = measure(svg, rows.map((r) => r.job)) + 18, right = 44;
+  const lo = Math.floor(Math.min(...rows.map((r) => r.p25)) / 1000) * 1000 - 500, hi = Math.ceil(Math.max(...rows.map((r) => r.p75)) / 1000) * 1000;
+  const x = (v) => left + (v - lo) / (hi - lo) * (W - left - right);
+  for (const t of niceTicks(lo, hi, Math.max(2, Math.floor((W - left - right) / 90)))) {
+    svg.append(svgEl('line', { x1: x(t), x2: x(t), y1: top, y2: H - bottom, stroke: css('--grid') }));
+    svg.append(svgEl('text', { x: x(t), y: H - 6, 'text-anchor': 'middle', class: 'muted' }, fmt(t)));
+  }
+  const tip = tipFor(box), c = COLORS();
+  rows.forEach((d, i) => {
+    const cy = top + i * rowH + rowH / 2;
+    svg.append(svgEl('text', { x: 0, y: cy + 4 }, d.job));
+    svg.append(svgEl('rect', { x: x(d.p25), y: cy - 7, width: x(d.p75) - x(d.p25), height: 14, rx: 4, fill: c[i], 'fill-opacity': .3 }));
+    svg.append(svgEl('circle', { cx: x(d.median), cy, r: 6, fill: c[i] }));
+    svg.append(svgEl('text', { x: x(d.median), y: cy - 12, 'text-anchor': 'middle', 'font-weight': 700 }, fmt(d.median)));
+    svg.append(svgEl('text', { x: x(d.p25) - 5, y: cy + 4, 'text-anchor': 'end', class: 'muted' }, fmt(d.p25)));
+    svg.append(svgEl('text', { x: x(d.p75) + 5, y: cy + 4, class: 'muted' }, fmt(d.p75)));
+    const hit = svgEl('rect', { x: 0, y: cy - rowH / 2, width: W, height: rowH, fill: 'transparent' });
+    hit.addEventListener('mousemove', (ev) => tip.show(ev, d.job, ['하위 25%: ' + fmt(d.p25) + '만원', '중위값: ' + fmt(d.median) + '만원', '상위 25%: ' + fmt(d.p75) + '만원', '직업만족도: ' + d.satisfaction + '%', '일자리 전망: ' + d.outlook]));
+    hit.addEventListener('mouseleave', tip.hide);
+    svg.append(hit);
+  });
+}
+
+/* Education chart */
+function drawEdu() {
+  const box = document.getElementById('edu');
+  if (!box.clientWidth) return;
+  box.querySelector('svg')?.remove();
+  const c = COLORS(), jobs = [...new Set(DATA.edu_dist.map((r) => r.job))];
+  const W = Math.max(280, box.clientWidth), rowH = 52, top = 4, H = top + jobs.length * rowH;
+  const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '직업별 재직자 학력 분포' });
+  box.prepend(svg);
+  const left = measure(svg, jobs) + 18, x = (v) => left + v / 100 * (W - left - 4);
+  const tip = tipFor(box);
+  jobs.forEach((j, i) => {
+    const cy = top + i * rowH + rowH / 2;
+    svg.append(svgEl('text', { x: 0, y: cy + 4 }, j));
+    let acc = 0;
+    for (const s of DATA.edu_dist.filter((r) => r.job === j).sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level))) {
+      const x0 = x(acc), w = x(acc + s.share) - x0;
+      const r = svgEl('rect', { x: x0, y: cy - 12, width: Math.max(0, w - 1), height: 24, fill: c[LEVELS.indexOf(s.level)] });
+      r.addEventListener('mousemove', (ev) => tip.show(ev, j, [s.level + ': ' + s.share + '%']));
+      r.addEventListener('mouseleave', tip.hide);
+      svg.append(r);
+      if (w > 38) { const t = svgEl('text', { x: x0 + w / 2, y: cy + 4, 'text-anchor': 'middle', 'pointer-events': 'none' }, s.share + '%'); t.style.fill = '#fff'; svg.append(t); }
+      acc += s.share;
+    }
+  });
+}
+function drawLegend() {
+  const box = document.getElementById('edu-legend'), c = COLORS();
+  box.replaceChildren(...LEVELS.map((l, i) => { const s = el('span', { textContent: l }); s.style.setProperty('--sw', c[i]); return s; }));
+}
+function drawCharts() { drawWage(); drawEdu(); }
+
+/* Tables */
+function fillTable(id, rows, cols) {
+  const tb = document.getElementById(id);
+  tb.replaceChildren(...rows.map((r) => el('tr', {}, ...cols.map((c) => {
+    const td = el('td');
+    if (c === 'url') td.append(el('a', { href: r.url, target: '_blank', rel: 'noopener', textContent: r.url.replace(/^https?:\/\//, '') }));
+    else { td.textContent = r[c]; if (c === 'track') td.style.color = trackColor(r[c]); }
+    return td;
+  }))));
+}
+function drawMajors() {
+  fillTable('t-majors', state.track === '전체' ? DATA.majors : DATA.majors.filter((r) => r.track === state.track), ['major', 'field', 'track', 'learn', 'jobs']);
+}
+
+/* Init */
+drawChecklist(); drawScore(); drawLegend(); setTrack('전체');
+fillTable('t-consortium', DATA.consortium, ['univ', 'region', 'role', 'space']);
+fillTable('t-tests', DATA.tests, ['test', 'org', 'target', 'measure', 'tip', 'url']);
+fillTable('t-roadmap', DATA.roadmap, ['stage', 'when', 'design', 'dev']);
+const start = location.hash.slice(1);
+if (['aptitude', 'jobs', 'majors', 'path'].includes(start)) showTab(start);
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawCharts, 120); });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { drawChecklist(); drawScore(); drawLegend(); setTrack(state.track); drawCharts(); fillTable('t-consortium', DATA.consortium, ['univ', 'region', 'role', 'space']); });
+</script>
+</body>
+</html>
